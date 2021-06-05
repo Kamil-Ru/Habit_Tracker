@@ -2,64 +2,49 @@ import requests
 from config import *
 from datetime import datetime
 
-pixela_endpoint = "https://pixe.la/v1/users"
+neutri_endpoint = "https://trackapi.nutritionix.com/v2/natural/exercise"
 
-user_params = {
-    "token": PIXELA_TOKEN,
-    "username": USER_NAME,
-    "agreeTermsOfService": "yes",
-    "notMinor": "yes"
-
+HEADERS = {
+    "x-app-id": APP_ID_NUTRI,
+    "x-app-key": API_KEY_NUTRI,
+    "x-remote-user-id": "0",
 }
 
-# TEST DELETE BEFORE PULL (LEARN GIT HUB ON PYCHARM)
-
-
-# response = requests.post(url=pixela_endpoint, json=user_params)
-# print(response.text)
-
-graph_endpoint = f"{pixela_endpoint}/{USER_NAME}/graphs"
-
-graph_config = {
-    "id": GRAPH_ID,
-    "name": "Cycling Graph (Testing)",
-    "unit": "Km",
-    "type": "float",
-    "color": "ajisai"
+config = {
+     "query": input("Type your exercise: "),
+     "gender": "male",
+     "weight_kg": 72,
+     "height_cm": 183,
+     "age": 30
 }
 
-headers = {
-    "X-USER-TOKEN": PIXELA_TOKEN
-}
+response = requests.request("POST", url=neutri_endpoint, headers=HEADERS, data=config)
+response_data = response.json()
+response_data_exercises = response_data["exercises"]
 
-# response = requests.post(url=graph_endpoint, json=graph_config, headers=headers)
-# print(response.text)
-
-post_endpoint = f"{pixela_endpoint}/{USER_NAME}/graphs/{GRAPH_ID}"
-
-date_now = datetime(year=2021, month=6 ,day=2)
-date = date_now.strftime("%Y%m%d")
-print(date)
+for _ in range(len(response_data_exercises)):
+    exercise_type = response_data_exercises[_]["name"]
+    duration = response_data_exercises[_]["duration_min"]
+    calories = response_data_exercises[_]["nf_calories"]
 
 
-post_config = {
-    "date": date,
-    "quantity": "100"
-}
+    data_now = datetime.now()
+    data = data_now.strftime("%d/%m/%Y")
+    time = data_now.strftime("%H:%M:%S")
 
-# response = requests.post(url=post_endpoint, json=post_config, headers=headers)
-# print(response.text)
+    url_sheety = URL_SHEETY
 
+    headersAuth = {
+        'Authorization': f'Bearer {BEARER_AUTHENTICATION}'
+    }
+    body = {
+        "workout": {
+            "date": data,
+            "time": time,
+            "exercise": exercise_type.title(),
+            "duration": duration,
+            "calories": calories
+        }
+    }
+    response = requests.post(url=url_sheety, json=body, headers=headersAuth)
 
-put_endpoint = f"{pixela_endpoint}/{USER_NAME}/graphs/{GRAPH_ID}/{date}"
-
-put_config = {
-    "quantity": "10"
-}
-# TEST DELETE BEFORE PULL (LEARN GIT HUB ON PYCHARM)
-# response = requests.put(url=put_endpoint, json=put_config, headers=headers)
-# print(response.text)
-
-delete_endpoint = f"{pixela_endpoint}/{USER_NAME}/graphs/{GRAPH_ID}/{date}"
-response = requests.delete(url=put_endpoint, headers=headers)
-print(response.text)
